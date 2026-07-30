@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Pinnacle Bank</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+        .card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        h2 {
+            color: #1a365d;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+        .info {
+            font-size: 16px;
+            color: #4a5568;
+            margin: 12px 0;
+        }
+        .balance {
+            font-size: 24px;
+            color: #2b6cb0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Welcome, {{ user.username }}! 👋</h2>
+        <hr>
+
+        {% if account %}
+            <p class="info"><strong>Account Number:</strong> {{ account.account_number }}</p>
+            <p class="info"><strong>Current Balance:</strong> <span class="balance">${{ account.balance }}</span></p>
+        {% else %}
+            <p class="info">No bank account found for your user profile.</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>
