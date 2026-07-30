@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinnacle Bank | Core Financial Suite</title>
+    <style>
+        :root {
+            --bg-main: #060913;
+            --bg-surface: #0b1120;
+            --bg-card: #131c31;
+            --border-color: #1e2942;
+            --accent-blue: #38bdf8;
+            --accent-green: #4cd137;
+            --accent-purple: #818cf8;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --shadow-glow: rgba(56, 189, 248, 0.25);
+            --gradient-card: linear-gradient(135deg, #16223f 0%, #0f172a 100%);
+        }
+
+        .light-mode {
+            --bg-main: #f1f5f9;
+            --bg-surface: #ffffff;
+            --bg-card: #f8fafc;
+            --border-color: #cbd5e1;
+            --accent-blue: #0284c7;
+            --accent-green: #22c55e;
+            --accent-purple: #4f46e5;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --shadow-glow: rgba(2, 132, 199, 0.15);
+            --gradient-card: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 100%);
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 430px;
+            background-color: var(--bg-surface);
+            height: 100vh;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+        }
+
+        .toast-notification {
+            position: absolute;
+            top: -80px;
+            left: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1.5px solid var(--accent-blue);
+            border-radius: 14px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 3000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast-notification.active {
+            top: 20px;
+        }
+        .toast-icon {
+            font-size: 20px;
+        }
+        .toast-message {
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.4;
+            color: #fff;
+        }
+
+        .screen-container {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+            padding-bottom: 90px;
+        }
+
+        .screen {
+            display: none;
+            padding: 24px 20px;
+            animation: screenFade 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .screen.active { display: block; }
+
+        @keyframes screenFade {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-primary { background: var(--accent-blue); color: #fff; border: none; padding: 14px 20px; border-radius: 12px; font-weight: 700; width: 100%; cursor: pointer; transition: transform 0.1s; display: block; text-align: center; box-sizing: border-box; }
+        .btn-primary:active { transform: scale(0.98); }
+        .form-group { margin-bottom: 18px; text-align: left; }
+        .form-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600; }
+        .form-control { width: 100%; background: var(--bg-card); border: 1.5px solid var(--border-color); padding: 12px 14px; border-radius: 10px; color: var(--text-primary); font-size: 14px; box-sizing: border-box; }
+        .form-control:focus { border-color: var(--accent-blue); outline: none; }
+        .card-element { background: var(--gradient-card); border: 1.5px solid var(--border-color); border-radius: 16px; padding: 18px; margin-bottom: 20px; }
+        .section-header { font-size: 16px; font-weight: 700; margin: 24px 0 14px 0; display: flex; justify-content: space-between; align-items: center; letter-spacing: 0.3px; }
+        
+        .action-icon-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 12px; margin-bottom: 20px; }
+        .grid-node { text-align: center; font-size: 11px; font-weight: 600; color: var(--text-primary); cursor: pointer; }
+        .icon-wrapper { width: 56px; height: 56px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; margin: 0 auto 8px auto; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.2s; }
+        .grid-node:hover .icon-wrapper { border-color: var(--accent-blue); box-shadow: 0 0 12px var(--shadow-glow); }
+
+        .top-navbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-color); background: var(--bg-surface); }
+        .navbar-brand { font-weight: 800; font-size: 18px; color: var(--accent-blue); letter-spacing: 0.5px; }
+        .nav-actions { display: flex; gap: 12px; align-items: center; }
+        .nav-circle-btn { background: var(--bg-card); width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; }
+
+        .bottom-dock-menu { position: absolute; bottom: 0; left: 0; width: 100%; height: 74px; background: var(--bg-surface); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; align-items: center; z-index: 900; box-sizing: border-box; }
+        .dock-link { text-align: center; font-size: 11px; color: var(--text-secondary); cursor: pointer; font-weight: 600; width: 60px; }
+        .dock-link.active { color: var(--accent-blue); }
+        .dock-scan-btn { background: var(--accent-blue); color: #fff; width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; margin-top: -36px; border: 5px solid var(--bg-surface); box-shadow: 0 4px 15px var(--shadow-glow); cursor: pointer; }
+
+        .header-arrow-group { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+        .back-node-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; font-weight: bold; }
+
+        .balance-strip { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(90deg, #1d4ed8 0%, #1e40af 100%); color: #fff; border-radius: 14px; padding: 16px 20px; box-shadow: 0 4px 15px rgba(29, 78, 216, 0.3); margin-bottom: 20px; }
+        .tab-segment-bar { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg-main); padding: 4px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+        .segment-btn { text-align: center; padding: 10px 0; font-size: 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; border-radius: 7px; }
+        .segment-btn.active { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); }
+
+        .ledger-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        .ledger-meta { display: flex; align-items: center; gap: 12px; }
+        .ledger-icon { width: 36px; height: 36px; background: var(--bg-card); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .amt-credited { color: var(--accent-green); font-weight: 700; }
+        .amt-debited { color: #ff4757; font-weight: 700; }
+
+        .physical-card-mock { width: 100%; height: 180px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.1); position: relative; margin-bottom: 20px; color: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+        .card-frozen { filter: grayscale(1) opacity(0.6); }
+        .card-frozen::after { content: '❄ FROZEN'; position: absolute; top: 40%; left: 35%; background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); padding: 8px 16px; border-radius: 20px; font-weight: 800; font-size: 14px; letter-spacing: 1px; }
+
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 2000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 0.25s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-body { background: var(--bg-surface); border: 2px solid var(--border-color); border-radius: 24px; width: 85%; padding: 24px; text-align: center; box-shadow: 0 10px 35px rgba(0,0,0,0.5); }
+        .qr-matrix-render { width: 160px; height: 160px; background: #fff; margin: 20px auto; padding: 12px; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .qr-square { background: #000; }
+
+        #biometricTarget { width: 100px; height: 100px; background: rgba(56, 189, 248, 0.05); border-radius: 50%; border: 2px dashed var(--accent-blue); display: flex; align-items: center; justify-content: center; font-size: 42px; margin: 30px auto; cursor: pointer; }
+        #biometricTarget.scanning { animation: scanPulse 0.6s infinite alternate; }
+        @keyframes scanPulse { from { transform: scale(1); opacity: 0.7; } to { transform: scale(0.96); opacity: 1; box-shadow: 0 0 20px var(--shadow-glow); } }
+    </style>
+</head>
+<body>
+
+    <div class="app-shell">
+        
+        <div class="toast-notification" id="appToastSystem">
+            <div class="toast-icon" id="appToastIcon">✨</div>
+            <div class="toast-message" id="appToastMessage">System Framework Loaded Successfully.</div>
+        </div>
+
+        <div class="top-navbar" id="appGlobalHeader" style="display:none;">
+            <div class="navbar-brand">⚜ PINNACLE BANK</div>
+            <div class="nav-actions">
+                <div class="nav-circle-btn" onclick="toggleInterfaceTheme()">🌓</div>
+                <div class="nav-circle-btn" onclick="navigateTo('adminPanelScreen')">🛠</div>
+                <div class="nav-circle-btn" onclick="navigateTo('notificationsScreen')">🔔</div>
+            </div>
+        </div>
+
+        <div class="screen-container">
+
+            <div class="screen active" id="splashScreen">
+                <div style="height: 80vh; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 40px 0;">
+                    <div style="text-align: center; margin-top: 60px;">
+                        <h1 style="font-size: 38px; font-weight: 900; letter-spacing: 4px; margin: 0; color: var(--accent-blue);">PINNACLE BANK</h1>
+                    </div>
+                    <div style="width: 100%;">
+                        <button class="btn-primary" style="margin-bottom: 14px; background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%); display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="loginWithBiometric()">
+                            <span>👤</span> Biometric Login
+                        </button>
+                        <button class="btn-primary" style="margin-bottom: 14px;" onclick="navigateTo('loginScreen')">Access Digital Portal</button>
+                        <button class="btn-primary" style="background: var(--bg-card); border: 1.5px solid var(--border-color); color: var(--text-primary);" onclick="navigateTo('registrationScreen')">Register Open Account</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="screen" id="registrationScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('splashScreen')">←</div>
+                    <div class="screen-title-text">Registration Gateway</div>
+                </div>
+                <div class="form-group">
+                    <label>Aadhaar Identity Number</label>
+                    <input type="text" class="form-control" placeholder="Enter 12-digit Aadhaar">
+                </div>
+                <div class="form-group">
+                    <label>PAN Tax Number</label>
+                    <input type="text" class="form-control" placeholder="Enter alphanumeric PAN string">
+                </div>
+                <div class="form-group">
+                    <label>Mobile Contact Link</label>
+                    <input type="tel" class="form-control" placeholder="Enter registered mobile number">
+                </div>
+                <div class="form-group">
+                    <label>Secure Email Address</label>
+                    <input type="email" class="form-control" placeholder="name@domain.com">
+                </div>
+                <button class="btn-primary" onclick="triggerOTPVerificationFlow()">Generate Verification OTP</button>
+            </div>
+
+            <div class="screen" id="otpScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('registrationScreen')">←</div>
+                    <div class="screen-title-text">OTP Verification Loop</div>
+                </div>
+                <p style="font-size: 14px; color: var(--text-secondary);">Enter the 6-digit verification code sent to your device.</p>
+                <div class="form-group" style="margin: 30px 0;">
+                    <input type="text" class="form-control" placeholder="000000" style="text-align: center; font-size: 24px; letter-spacing: 8px;">
+                </div>
+                <button class="btn-primary" onclick="showAppToast('📱 Device authorization secure. Account generated.', '✅'); navigateTo('loginScreen');">Verify & Bind Device</button>
+            </div>
+
+            <div class="screen" id="loginScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('splashScreen')">←</div>
+                    <div class="screen-title-text">Portal Login Console</div>
+                </div>
+                <div class="tab-segment-bar">
+                    <div class="segment-btn active" id="tabL1" onclick="switchLoginMethod('mpin')">MPIN</div>
+                    <div class="segment-btn" id="tabL2" onclick="switchLoginMethod('pass')">Password</div>
+                    <div class="segment-btn" id="tabL3" onclick="switchLoginMethod('bio')">Biometric</div>
+                </div>
+                
+                <div id="loginFormContainer" style="margin-top: 24px;">
+                    <div class="form-group">
+                        <label>Enter 4-Digit Security MPIN</label>
+                        <input type="password" class="form-control" value="1234" maxlength="4" style="text-align:center; font-size:22px; letter-spacing:10px;">
+                    </div>
+                </div>
+                <button class="btn-primary" style="margin-top: 10px;" onclick="executeSystemLoginAuthentication()">Authenticate Session</button>
+                <p style="font-size: 13px; text-align: center; color: var(--accent-blue); margin-top: 20px; cursor: pointer;" onclick="showAppToast('Password reset link channeled to secure mail profile.', '✉️')">Forgot Access Parameters?</p>
+            </div>
+
+            <div class="screen" id="homeDashboardScreen">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <div style="font-size: 14px; color: var(--text-secondary);" id="timeGreetingLabel">Welcome back,</div>
+                        <div style="font-size: 22px; font-weight: 800; margin-top: 2px;" id="userNameLabel">Lysandra royce</div>
+                    </div>
+                    <div style="width: 46px; height: 46px; border-radius: 50%; background: var(--accent-purple); color:#fff; font-weight:700; display:flex; align-items:center; justify-content:center; border: 2px solid var(--border-color);">LR</div>
+                </div>
+
+                <div class="balance-strip">
+                    <div>
+                        <div style="font-size: 12px; opacity: 0.85; font-weight: 600; letter-spacing: 0.5px;">COMBINED ACCOUNT BALANCE</div>
+                        <div style="font-size: 26px; font-weight: 800; margin-top: 4px;" id="dashboardBalanceText">₹4,82,910.45</div>
+                    </div>
+                    <div style="font-size: 22px; cursor: pointer;" onclick="toggleLedgerBalanceVisibility()">👁</div>
+                </div>
+
+                <div class="section-header">Core Management Hub</div>
+                <div class="action-icon-grid">
+                    <div class="grid-node" onclick="navigateTo('accountsHubScreen')"><div class="icon-wrapper">💼</div>Accounts</div>
+                    <div class="grid-node" onclick="navigateTo('transferScreen')"><div class="icon-wrapper">💸</div>Transfers</div>
+                    <div class="grid-node" onclick="navigateTo('upiHubScreen')"><div class="icon-wrapper">⚡</div>UPI Core</div>
+                    <div class="grid-node" onclick="navigateTo('billsPayScreen')"><div class="icon-wrapper">📄</div>Bill Pay</div>
+                    <div class="grid-node" onclick="navigateTo('cardsManagerScreen')"><div class="icon-wrapper">💳</div>Cards</div>
+                    <div class="grid-node" onclick="navigateTo('loansHubScreen')"><div class="icon-wrapper">🏛</div>Loans</div>
+                    <div class="grid-node" onclick="navigateTo('investmentsHubScreen')"><div class="icon-wrapper">📈</div>Investments</div>
+                    <div class="grid-node" onclick="navigateTo('analyticsHubScreen')"><div class="icon-wrapper">📊</div>Analytics</div>
+                </div>
+
+                <div class="section-header">Recent Real-Time Ledger Activity</div>
+                <div class="card-element" style="padding: 6px 16px;" id="liveTransactionsLedgerSpace">
+                    <div class="ledger-row">
+                        <div class="ledger-meta"><div class="ledger-icon">🔌</div><div><div>Utility Bill Debited</div><div style="font-size:11px; color:var(--text-secondary);">12:24 PM</div></div></div>
+                        <div class="amt-debited">-₹1,420.00</div>
+                    </div>
+                    <div class="ledger-row">
+                        <div class="ledger-meta"><div class="ledger-icon">🏦</div><div><div>IMPS Deposit Inward</div><div style="font-size:11px; color:var(--text-secondary);">Yesterday</div></div></div>
+                        <div class="amt-credited">+₹45,000.00</div>
+                    </div>
+                    <div class="ledger-row">
+                        <div class="ledger-meta"><div class="ledger-icon">🍿</div><div><div>Merchant POS Settlement</div><div style="font-size:11px; color:var(--text-secondary);">05 Jul 2026</div></div></div>
+                        <div class="amt-debited">-₹650.00</div>
+                    </div>
+                </div>
+
+                <div class="section-header">Promotions & Loyalty Assets</div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                    <div class="card-element" style="margin:0; text-align:center; cursor:pointer;" onclick="showAppToast('Current Cashback Balance: ₹1,420.00 linked to principal savings.', '💰')">
+                        <div style="font-size:22px; margin-bottom:4px;">💰</div>
+                        <div style="font-size:13px; font-weight:700;">Cashback Engine</div>
+                        <div style="font-size:11px; color:var(--accent-green); font-weight:700; margin-top:2px;">₹1,420 Active</div>
+                    </div>
+                    <div class="card-element" style="margin:0; text-align:center; cursor:pointer;" onclick="showAppToast('8,450 Reward points ready to redeem via store catalogue.', '🎁')">
+                        <div style="font-size:22px; margin-bottom:4px;">🎁</div>
+                        <div style="font-size:13px; font-weight:700;">Reward Points</div>
+                        <div style="font-size:11px; color:var(--accent-purple); font-weight:700; margin-top:2px;">8,450 Points</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="screen" id="accountsHubScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('homeDashboardScreen')">←</div>
+                    <div class="screen-title-text">Account Portfolios</div>
+                </div>
+                <div class="tab-segment-bar">
+                    <div class="segment-btn active" id="accTab1" onclick="switchAccountPortfolioView('savings')">Deposit</div>
+                    <div class="segment-btn" id="accTab2" onclick="switchAccountPortfolioView('term')">Term</div>
+                    <div class="segment-btn" id="accTab3" onclick="switchAccountPortfolioView('loan')">Credit</div>
+                </div>
+                <div id="accountCardsRenderSpace">
+                    <div class="card-element">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                            <div>
+                                <div style="font-size:11px; color:var(--text-secondary); font-weight:700;">PREMIUM SAVINGS ACCOUNT</div>
+                                <div style="font-size:14px; font-weight:700; margin-top:2px;">100922883710</div>
+                            </div>
+                            <span style="background:rgba(56, 189, 248, 0.15); color:var(--accent-blue); font-size:11px; padding:3px 8px; border-radius:10px; font-weight:700;">ACTIVE</span>
+                        </div>
+                        <div style="font-size:22px; font-weight:800; color:var(--accent-blue);" id="savingsBalanceRender">₹3,12,450.45</div>
+                        <div style="border-top:1px solid var(--border-color); margin-top:14px; padding-top:12px; display:flex; justify-content:space-between; font-size:12px;">
+                            <span style="color:var(--accent-blue); font-weight:700; cursor:pointer;" onclick="triggerDocumentGeneration('Statement PDF')">Download Statement</span>
+                            <span style="color:var(--text-secondary); cursor:pointer;" onclick="triggerDocumentGeneration('Interest Certificate')">Tax Certificate</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="screen" id="transferScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('homeDashboardScreen')">←</div>
+                    <div class="screen-title-text">Fund Remittance</div>
+                </div>
+                <div class="form-group">
+                    <label>Select Remittance Network Protocol</label>
+                    <select class="form-control" id="remittanceProtocolSelector">
+                        <option value="IMPS">IMPS (Real-Time Settlement)</option>
+                        <option value="NEFT">NEFT (Batch Processing)</option>
+                        <option value="RTGS">RTGS (Large-Value Gross Processing)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Target Beneficiary Account String</label>
+                    <input type="text" class="form-control" value="99012248591" placeholder="Enter bank account number">
+                </div>
+                <div class="form-group">
+                    <label>System Financial IFSC Code</label>
+                    <input type="text" class="form-control" value="PINN0001024" style="text-transform:uppercase;">
+                </div>
+                <div class="form-group">
+                    <label>Remittance Value Amount (INR)</label>
+                    <input type="number" class="form-control" placeholder="0.00" id="remittanceValueInput">
+                </div>
+                <button class="btn-primary" onclick="executeRemittancePipeline()">Authorize Capital Transfer</button>
+            </div>
+
+            <div class="screen" id="upiHubScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('homeDashboardScreen')">←</div>
+                    <div class="screen-title-text">Unified Payments Engine (UPI)</div>
+                </div>
+                <div class="card-element" style="text-align:center;">
+                    <div style="font-size:13px; color:var(--text-secondary);">PRIMARY UPI VPA STRING</div>
+                    <div style="font-size:18px; font-weight:700; margin-top:4px; color:var(--accent-blue);">lysandra@pinnacle</div>
+                </div>
+                <div class="action-icon-grid">
+                    <div class="grid-node" onclick="toggleQRModal(true)"><div class="icon-wrapper">🔳</div>My QR Code</div>
+                    <div class="grid-node" onclick="showAppToast('Camera layer activated. Place QR within frame.', '📷')"><div class="icon-wrapper">📷</div>Scan QR</div>
+                    <div class="grid-node" onclick="navigateTo('toMobileScreen')"><div class="icon-wrapper">👥</div>Pay Contacts</div>
+                    <div class="grid-node" onclick="showAppToast('UPI Lite initialized for offline micro-transactions.', '⚡')"><div class="icon-wrapper">⚡</div>UPI Lite</div>
+                </div>
+            </div>
+
+            <div class="screen" id="billsPayScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('homeDashboardScreen')">←</div>
+                    <div class="screen-title-text">Utilities Hub</div>
+                </div>
+                <div class="subheader-banner" style="background: #111824; color: #e0aa3e; padding: 12px; text-align: center; font-size: 13px; font-weight: 700; border-radius: 8px; margin-bottom: 20px;">
+                    No Platform fee, Zero fee on your bills and recharges!
+                </div>
+                <div class="action-icon-grid">
+                    <div class="grid-node" onclick="triggerUtilityPaymentProcessing('Mobile Bill', 499)"><div class="icon-wrapper">📱</div>Mobile</div>
+                    <div class="grid-node" onclick="triggerUtilityPaymentProcessing('DTH Recharge', 350)"><div class="icon-wrapper">📡</div>DTH</div>
+                    <div class="grid-node" onclick="triggerUtilityPaymentProcessing('Electricity Bill', 2840)"><div class="icon-wrapper">💡</div>Electricity</div>
+                    <div class="grid-node" onclick="triggerUtilityPaymentProcessing('Water Supply', 620)"><div class="icon-wrapper">🚰</div>Water</div>
+                    <div class="grid-node" onclick="triggerUtilityPaymentProcessing('LPG Cylinder', 1050)"><div class="icon-wrapper">🛢</div>Gas Cylinder</div>
+                    <div class="grid-node" onclick="triggerUtilityPaymentProcessing('Broadband Bill', 999)"><div class="icon-wrapper">🌐</div>Broadband</div>
+                    <div class="grid-node" onclick="triggerUtilityPaymentProcessing('FASTag Topup', 1000)"><div class="icon-wrapper">🚗</div>FASTag</div>
+                    <div class="grid-node" onclick="triggerUtilityPaymentProcessing('Credit Card Payment', 12450)"><div class="icon-wrapper">💳</div>Credit Card</div>
+                </div>
+            </div>
+
+            <div class="screen" id="cardsManagerScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('homeDashboardScreen')">←</div>
+                    <div class="screen-title-text">Card Architecture</div>
+                </div>
+                <div class="tab-segment-bar">
+                    <div class="segment-btn active" id="cardTab1" onclick="switchActiveCardVisualizer('debit')">Debit Card</div>
+                    <div class="segment-btn" id="cardTab2" onclick="switchActiveCardVisualizer('credit')">Credit Card</div>
+                </div>
+                <div class="physical-card-mock" id="cardGraphicElement">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <span style="font-style:italic; font-weight:800; tracking:1px;">ALPHA PLATINUM</span>
+                        <span style="font-size:24px;">🔲</span>
+                    </div>
+                    <div style="font-size:20px; font-weight:700; letter-spacing:3px; text-shadow:0 2px 4px rgba(0,0,0,0.8);" id="cardDigitsLabel">•••• •••• •••• 5928</div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px;">
+                        <div><div>CARD HOLDER</div><div style="font-weight:700; font-size:13px;">LYSANDRA ROYCE</div></div>
+                        <div style="text-align:right;"><div>EXPIRES</div><div style="font-weight:700;">08/31</div></div>
+                    </div>
+                </div>
+                <div class="card-element" style="padding:4px 16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid var(--border-color);">
+                        <div><div style="font-weight:600; font-size:14px;">Freeze Instrument Status</div><div style="font-size:11px; color:var(--text-secondary);">Deactivate transactional processing</div></div>
+                        <input type="checkbox" onchange="toggleInstrumentFreezeState(this.checked)" style="width:20px; height:20px; cursor:pointer;">
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 0;">
+                        <div><div style="font-weight:600; font-size:14px;">International Gateway Usage</div><div style="font-size:11px; color:var(--text-secondary);">Enable global settlement nodes</div></div>
+                        <input type="checkbox" onchange="showAppToast('International parameters initialized.', '🌐')" style="width:20px; height:20px; cursor:pointer;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="screen" id="loansHubScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('homeDashboardScreen')">←</div>
+                    <div class="screen-title-text">Credit & Debt Architecture</div>
+                </div>
+                <div class="card-element">
+                    <div style="font-size:14px; font-weight:700; margin-bottom:12px;">EMI Simulation Calculator Engine</div>
+                    <div class="form-group">
+                        <label>Principal Target Funding (INR)</label>
+                        <input type="range" min="100000" max="5000000" step="50000" value="1000000" id="loanRangePrincipal" oninput="calculateSimulatedLoanEMI()" style="width:100%;">
+                        <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span id="lblP1">₹10,00,000</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Temporal Tenure Duration (Months)</label>
+                        <input type="range" min="12" max="240" step="12" value="60" id="loanRangeTenure" oninput="calculateSimulatedLoanEMI()" style="width:100%;">
+                        <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:4px;"><span id="lblT1">60 Months</span></div>
+                    </div>
+                    <div style="background:var(--bg-main); padding:12px; border-radius:10px; text-align:center; border:1px solid var(--border-color); margin-top:14px;">
+                        <div style="font-size:11px; color:var(--text-secondary); font-weight:600;">ESTIMATED MONTHLY LIABILITY</div>
+                        <div style="font-size:22px; font-weight:800; color:var(--accent-blue); margin-top:4px;" id="simulatedEmiLabel">₹20,516.00</div>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="showAppToast('Underwriting assessment metrics complete. Profile Cleared.', '✅')">Verify Eligibility Matrix</button>
+            </div>
+
+            <div class="screen" id="investmentsHubScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('homeDashboardScreen')">←</div>
+                    <div class="screen-title-text">Asset Allocation Hub</div>
+                </div>
+                <div class="card-element" style="background:linear-gradient(135deg, #064e3b 0%, #022c22 100%); border-color:#047857;">
+                    <div style="font-size:12px; color:#a7f3d0; font-weight:700;">PORTFOLIO COMPUTE VALUE</div>
+                    <div style="font-size:26px; font-weight:900; color:#34d399; margin-top:4px;">₹1,70,460.00</div>
+                    <div style="font-size:12px; color:#34d399; margin-top:4px; font-weight:600;">▲ +12.4% Net Yield Return</div>
+                </div>
+                <div class="action-icon-grid">
+                    <div class="grid-node" onclick="showAppToast('Opening Fixed Term Deposits portfolio.', '🔒')"><div class="icon-wrapper">🔒</div>Term Deposit</div>
+                    <div class="grid-node" onclick="showAppToast('SIP matrix processing channels active.', '🔄')"><div class="icon-wrapper">🔄</div>Systematic IP</div>
+                    <div class="grid-node" onclick="showAppToast('NPS portal synchronized.', '🛡')"><div class="icon-wrapper">🛡</div>NPS Platform</div>
+                    <div class="grid-node" onclick="showAppToast('Digital Bullion ledger connected.', '👑')"><div class="icon-wrapper">👑</div>Digital Gold</div>
+                </div>
+            </div>
+
+            <div class="screen" id="analyticsHubScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('homeDashboardScreen')">←</div>
+                    <div class="screen-title-text">Analytics Infrastructure</div>
+                </div>
+                <div class="card-element" style="text-align:center;">
+                    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:12px; font-weight:600;">OUTFLOW SPENDING DISTRIBUTION MODEL</div>
+                    <svg viewBox="0 0 200 100" style="width:100%; height:120px; fill:none;">
+                        <path d="M 0 80 Q 25 50 50 70 T 100 30 T 150 60 T 200 10" stroke="var(--accent-blue)" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M 0 80 Q 25 50 50 70 T 100 30 T 150 60 T 200 10 L 200 100 L 0 100 Z" fill="var(--accent-blue)" opacity="0.08"/>
+                        <line x1="0" y1="90" x2="200" y2="90" stroke="var(--border-color)" stroke-width="2"/>
+                    </svg>
+                    <div style="display:flex; justify-content:space-around; font-size:11px; margin-top:10px; color:var(--text-secondary); font-weight:700;">
+                        <span>INVESTMENTS (40%)</span><span>UTILITIES (35%)</span><span>RETAIL (25%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="screen" id="adminPanelScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('homeDashboardScreen')">←</div>
+                    <div class="screen-title-text">Administrative Console</div>
+                </div>
+                <div class="section-header">Pending Underwriting Allocations</div>
+                <div class="card-element" id="adminApplicationBlock1" style="font-size:13px;">
+                    <div style="display:flex; justify-content:space-between; font-weight:700; font-size:14px; margin-bottom:6px;">
+                        <span>Thaddeus Finch</span>
+                        <span style="color:var(--accent-purple);">CREDIT LINE REQ</span>
+                    </div>
+                    <div style="color:var(--text-secondary);">Application Ref: #LN-2026-9921</div>
+                    <div style="color:var(--text-secondary); margin-bottom:12px;">Requested Asset Cap: ₹8,50,000.00</div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-primary" style="padding:8px; font-size:12px; background:var(--accent-green);" onclick="processAdministrativeDecision('Approved')">Authorize</button>
+                        <button class="btn-primary" style="padding:8px; font-size:12px; background:#ff4757;" onclick="processAdministrativeDecision('Declined')">Reject</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="screen" id="notificationsScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('homeDashboardScreen')">←</div>
+                    <div class="screen-title-text">Notification Logs</div>
+                </div>
+                <div class="card-element" style="padding:4px 16px; font-size:13px;">
+                    <div style="padding:12px 0; border-bottom:1px solid var(--border-color);">
+                        <div style="font-weight:700; margin-bottom:2px; color:var(--accent-blue);">🛡 Security Authentication Alert</div>
+                        <div style="color:var(--text-secondary);">Portal login authorized from device parameter mapping footprint.</div>
+                    </div>
+                    <div style="padding:12px 0;">
+                        <div style="font-weight:700; margin-bottom:2px; color:var(--accent-green);">💸 Liquidity Settlement Complete</div>
+                        <div style="color:var(--text-secondary);">Yield matrix metrics appended to core repository balance.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="screen" id="toMobileScreen">
+                <div class="header-arrow-group">
+                    <div class="back-node-btn" onclick="navigateTo('upiHubScreen')">←</div>
+                    <div class="screen-title-text">Select Destination Node</div>
+                </div>
+                <div class="search-container">
+                    <input type="text" class="form-control" id="directorySearchField" placeholder="Search contact names..." onkeyup="filterDirectoryEngine()">
+                </div>
+                <div class="contact-list" id="directoryRenderSpace" style="display:flex; flex-direction:column; gap:8px; margin-top:14px;">
+                    <div class="ledger-row" style="cursor:pointer;" onclick="openActiveChatConsole('Aelwen Vance')">
+                        <div class="ledger-meta"><div class="avatar" style="width:36px; height:36px; background:#ff5252; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff;">AV</div><div><div class="c-nm">Aelwen Vance</div><div style="font-size:11px; color:var(--text-secondary);">+91 90011 22334</div></div></div>
+                    </div>
+                    <div class="ledger-row" style="cursor:pointer;" onclick="openActiveChatConsole('Zephyr Finch')">
+                        <div class="ledger-meta"><div class="avatar" style="width:36px; height:36px; background:#10ac84; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff;">ZF</div><div><div class="c-nm">Zephyr Finch</div><div style="font-size:11px; color:var(--text-secondary);">+91 91122 33445</div></div></div>
+                    </div>
+                    <div class="ledger-row" style="cursor:pointer;" onclick="openActiveChatConsole('Callisto Thorne')">
+                        <div class="ledger-meta"><div class="avatar" style="width:36px; height:36px; background:#5f27cd; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff;">CT</div><div><div class="c-nm">Callisto Thorne</div><div style="font-size:11px; color:var(--text-secondary);">+91 92233 44556</div></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="screen" id="chatScreen">
+                <div class="header-arrow-group" style="margin-bottom:10px;">
+                    <div class="back-node-btn" onclick="navigateTo('toMobileScreen')">←</div>
+                    <div class="screen-title-text" id="chatInterfaceHeaderTitle">Recipient Node</div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:16px; margin-top:20px; height:58vh; overflow-y:auto; padding:10px 0;">
+                    <div class="ledger-row" style="background:var(--bg-card); padding:12px; border-radius:12px;">
+                        <div><div>Payment Mandate Status</div><div style="font-size:11px; color:var(--text-secondary);">Baseline Setup</div></div>
+                        <div style="color:var(--accent-green); font-weight:700;">CLEAR</div>
+                    </div>
+                </div>
+                <div style="position:absolute; bottom:20px; left:0; width:100%; padding:0 20px; box-sizing:border-box; display:flex; gap:10px;">
+                    <input type="number" class="form-control" placeholder="Enter transfer amount..." id="chatTransferInputField">
+                    <button class="btn-primary" style="width:auto; padding:0 20px;" onclick="executeChatRemittanceEngine()">Send</button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bottom-dock-menu" id="appGlobalFooter" style="display:none;">
+            <div class="dock-link active" onclick="navigateTo('homeDashboardScreen')">🏛<br>Home</div>
+            <div class="dock-link" onclick="toggleInterfaceTheme()">🌓<br>Theme</div>
+            <div class="dock-scan-btn" onclick="toggleQRModal(true)">🔲</div>
+            <div class="dock-link" onclick="navigateTo('cardsManagerScreen')">💳<br>Cards</div>
+            <div class="dock-link" onclick="navigateTo('analyticsHubScreen')">📊<br>Metrics</div>
+        </div>
+
+        <div class="modal-overlay" id="globalQRModalComponent">
+            <div class="modal-body">
+                <h3 style="margin:0; color:var(--text-primary);">Core Cryptographic VPA Ring</h3>
+                <p style="font-size:12px; color:var(--text-secondary); margin:4px 0 16px 0;">Scan to transact instantly</p>
+                <div class="qr-matrix-render">
+                    <div class="qr-square"></div><div class="qr-square"></div><div class="qr-square" style="background:transparent;"></div>
+                    <div class="qr-square" style="background:transparent;"></div><div class="qr-square"></div><div class="qr-square"></div>
+                    <div class="qr-square"></div><div class="qr-square" style="background:transparent;"></div><div class="qr-square"></div>
+                </div>
+                <div style="font-weight:700; font-size:14px; margin:14px 0; color:var(--accent-blue);">pinnaclebank@coreupi</div>
+                <button class="btn-primary" onclick="toggleQRModal(false)">Close Scanner View</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentSystemLedgerBalance = 1000;
+        let ledgerBalanceMaskedState = false;
+        let selectedAuthenticationMethodStr = 'mpin';
+        let currentActiveChatRecipientStr = '';
+        let toastTimeout;
+
+        function showAppToast(messageText, iconEmoji = '✨') {
+            clearTimeout(toastTimeout);
+            const toastNode = document.getElementById('appToastSystem');
+            document.getElementById('appToastIcon').innerText = iconEmoji;
+            document.getElementById('appToastMessage').innerText = messageText;
+            
+            toastNode.classList.add('active');
+            toastTimeout = setTimeout(() => {
+                toastNode.classList.remove('active');
+            }, 3500);
+        }
+
+        function updateTimeGreetingBanner() {
+            const hr = new Date().getHours();
+            let greetingStr = "Good morning,";
+            if (hr >= 12 && hr < 17) greetingStr = "Good afternoon,";
+            else if (hr >= 17) greetingStr = "Good evening,";
+            document.getElementById('timeGreetingLabel').innerText = greetingStr;
+        }
+
+        function navigateTo(targetScreenId) {
+            document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
+            document.getElementById(targetScreenId).classList.add('active');
+
+            const headerNode = document.getElementById('appGlobalHeader');
+            const footerNode = document.getElementById('appGlobalFooter');
+
+            if (['splashScreen', 'registrationScreen', 'otpScreen', 'loginScreen', 'chatScreen'].includes(targetScreenId)) {
+                headerNode.style.display = 'none';
+                footerNode.style.display = 'none';
+            } else {
+                headerNode.style.display = 'flex';
+                footerNode.style.display = 'flex';
+                updateTimeGreetingBanner();
+                
+                document.querySelectorAll('.dock-link').forEach(node => node.classList.remove('active'));
+                if(targetScreenId === 'homeDashboardScreen') document.querySelectorAll('.dock-link')[0].classList.add('active');
+                if(targetScreenId === 'cardsManagerScreen') document.querySelectorAll('.dock-link')[2].classList.add('active');
+                if(targetScreenId === 'analyticsHubScreen') document.querySelectorAll('.dock-link')[3].classList.add('active');
+            }
+        }
+
+        function loginWithBiometric() {
+            navigateTo('loginScreen');
+            switchLoginMethod('bio');
+            setTimeout(() => {
+                triggerBiometricScanningLoop();
+            }, 450);
+        }
+
+        function triggerOTPVerificationFlow() {
+            showAppToast('Dynamic security verification token channeled.', '🔑');
+            navigateTo('otpScreen');
+        }
+
+        function switchLoginMethod(methodStr) {
+            selectedAuthenticationMethodStr = methodStr;
+            document.querySelectorAll('.segment-btn').forEach(btn => btn.classList.remove('active'));
+            const targetFormContainer = document.getElementById('loginFormContainer');
+            
+            if (methodStr === 'mpin') {
+                document.getElementById('tabL1').classList.add('active');
+                targetFormContainer.innerHTML = `<div class="form-group"><label>Enter 4-Digit Security MPIN</label><input type="password" class="form-control" value="1234" maxlength="4" style="text-align:center; font-size:22px; letter-spacing:10px;"></div>`;
+            } else if (methodStr === 'pass') {
+                document.getElementById('tabL2').classList.add('active');
+                targetFormContainer.innerHTML = `<div class="form-group"><label>Customer Username ID</label><input type="text" class="form-control" value="Lysandra_Alpha"><br><label>Session Password</label><input type="password" class="form-control" value="••••••••"></div>`;
+            } else {
+                document.getElementById('tabL3').classList.add('active');
+                targetFormContainer.innerHTML = `<div style="text-align:center;"><div id="biometricTarget" onclick="triggerBiometricScanningLoop()">👤</div><p style="font-size:12px; color:var(--text-secondary);">Tap icon to execute biometric scan framework</p></div>`;
+            }
+        }
+
+        function triggerBiometricScanningLoop() {
+            const element = document.getElementById('biometricTarget');
+            if(element) element.classList.add('scanning');
+            setTimeout(() => {
+                if(element) element.classList.remove('scanning');
+                showAppToast('Identity check matching verified successfully.', '✅');
+                navigateTo('homeDashboardScreen');
+            }, 1000);
+        }
+
+        function executeSystemLoginAuthentication() {
+            showAppToast('Digital session handshake authorized.', '🔒');
+            navigateTo('homeDashboardScreen');
+        }
+
+        function updateDashboardVisualBalance() {
+            const el = document.getElementById('dashboardBalanceText');
+            const sav = document.getElementById('savingsBalanceRender');
+            if(ledgerBalanceMaskedState) {
+                el.innerText = "••••••";
+                if(sav) sav.innerText = "••••••";
+            } else {
+                el.innerText = "₹" + currentSystemLedgerBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                if(sav) sav.innerText = "₹" + (currentSystemLedgerBalance - 170460).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            }
+        }
+
+        function toggleLedgerBalanceVisibility() {
+            ledgerBalanceMaskedState = !ledgerBalanceMaskedState;
+            updateDashboardVisualBalance();
+        }
+
+        function appendLiveLedgerTransaction(labelTitle, transactionalValue, directionalIcon = '💸') {
+            const ledgerBox = document.getElementById('liveTransactionsLedgerSpace');
+            const rowElement = document.createElement('div');
+            rowElement.className = 'ledger-row';
+            
+            const internalValFormat = parseFloat(transactionalValue);
+            const formattedValString = "₹" + internalValFormat.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+
+            rowElement.innerHTML = `
+                <div class="ledger-meta">
+                    <div class="ledger-icon">${directionalIcon}</div>
+                    <div>
+                        <div>${labelTitle}</div>
+                        <div style="font-size:11px; color:var(--text-secondary);">Just Now</div>
+                    </div>
+                </div>
+                <div class="amt-debited" style="color:#ff4757;">-${formattedValString}</div>
+            `;
+            ledgerBox.insertBefore(rowElement, ledgerBox.firstChild);
+        }
+
+        function switchAccountPortfolioView(portfolioTypeStr) {
+            document.querySelectorAll('#accountsHubScreen .segment-btn').forEach(btn => btn.classList.remove('active'));
+            const renderSpace = document.getElementById('accountCardsRenderSpace');
+            
+            if(portfolioTypeStr === 'savings') {
+                document.getElementById('accTab1').classList.add('active');
+                renderSpace.innerHTML = `<div class="card-element"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;"><div><div style="font-size:11px; color:var(--text-secondary); font-weight:700;">PREMIUM SAVINGS ACCOUNT</div><div style="font-size:14px; font-weight:700; margin-top:2px;">100922883710</div></div><span style="background:rgba(56, 189, 248, 0.15); color:var(--accent-blue); font-size:11px; padding:3px 8px; border-radius:10px; font-weight:700;">ACTIVE</span></div><div style="font-size:22px; font-weight:800; color:var(--accent-blue);" id="savingsBalanceRender">₹3,12,450.45</div><div style="border-top:1px solid var(--border-color); margin-top:14px; padding-top:12px; display:flex; justify-content:space-between; font-size:12px;"><span style="color:var(--accent-blue); font-weight:700; cursor:pointer;" onclick="triggerDocumentGeneration('Statement PDF')">Download Statement</span><span style="color:var(--text-secondary); cursor:pointer;" onclick="triggerDocumentGeneration('Interest Certificate')">Tax Certificate</span></div></div>`;
+                updateDashboardVisualBalance();
+            } else if(portfolioTypeStr === 'term') {
+                document.getElementById('accTab2').classList.add('active');
+                renderSpace.innerHTML = `<div class="card-element" style="border-color:var(--accent-purple);"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;"><div><div style="font-size:11px; color:var(--text-secondary); font-weight:700;">FIXED TERM MATRIX DEPOSIT</div><div style="font-size:14px; font-weight:700; margin-top:2px;">FD-2026-8837</div></div><span style="background:rgba(129, 140, 248, 0.15); color:var(--accent-purple); font-size:11px; padding:3px 8px; border-radius:10px; font-weight:700;">MATURING</span></div><div style="font-size:22px; font-weight:800; color:var(--accent-purple);">₹1,50,000.00</div><div style="font-size:12px; color:var(--text-secondary); margin-top:6px;">Maturity Unlock Horizon: 14 Oct 2026</div></div>`;
+            } else {
+                document.getElementById('accTab3').classList.add('active');
+                renderSpace.innerHTML = `<div class="card-element" style="border-color:#ff4757;"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;"><div><div style="font-size:11px; color:var(--text-secondary); font-weight:700;">VEHICLE MORTGAGE LOAN LIABILITY</div><div style="font-size:14px; font-weight:700; margin-top:2px;">LN-9921-0082</div></div><span style="background:rgba(255, 71, 87, 0.15); color:#ff4757; font-size:11px; padding:3px 8px; border-radius:10px; font-weight:700;">AMORTIZING</span></div><div style="font-size:22px; font-weight:800; color:#ff4757;">₹20,460.00</div><div style="font-size:12px; color:var(--text-secondary); margin-top:6px;">Next Scheduled Debit Phase: 01 Aug 2026</div></div>`;
+            }
+        }
+
+        function triggerDocumentGeneration(docTypeStr) {
+            showAppToast(`Compiled and encrypted ${docTypeStr} successfully.`, '📄');
+        }
+
+        function executeRemittancePipeline() {
+            const valInput = document.getElementById('remittanceValueInput').value;
+            const amtFloat = parseFloat(valInput);
+            
+            if(!valInput || isNaN(amtFloat) || amtFloat <= 0) {
+                showAppToast('Execution Error: Invalid numerical parameter.', '❌');
+                return;
+            }
+            if(amtFloat > currentSystemLedgerBalance) {
+                showAppToast('Transaction Denied: Insufficient capital reserves.', '❌');
+                return;
+            }
+
+            currentSystemLedgerBalance -= amtFloat;
+            updateDashboardVisualBalance();
+            appendLiveLedgerTransaction('Account Remittance Outbound', amtFloat, '🏦');
+            showAppToast(`Remitted ₹${amtFloat.toLocaleString('en-IN')} securely via clearing node.`, '✅');
+            navigateTo('homeDashboardScreen');
+        }
+
+        function triggerUtilityPaymentProcessing(utilityNameStr, standardCostValue) {
+            if(standardCostValue > currentSystemLedgerBalance) {
+                showAppToast('Insufficient balance reserves for clearing operation.', '❌');
+                return;
+            }
+            currentSystemLedgerBalance -= standardCostValue;
+            updateDashboardVisualBalance();
+            appendLiveLedgerTransaction(utilityNameStr + ' Settlement', standardCostValue, '📄');
+            showAppToast(`Settled ${utilityNameStr} liability of ₹${standardCostValue} completely.`, '✅');
+            navigateTo('homeDashboardScreen');
+        }
+
+        function switchActiveCardVisualizer(cardClassStr) {
+            const titleNode = document.getElementById('cardDigitsLabel');
+            const typeTab1 = document.getElementById('cardTab1');
+            const typeTab2 = document.getElementById('cardTab2');
+
+            typeTab1.classList.remove('active');
+            typeTab2.classList.remove('active');
+
+            if(cardClassStr === 'debit') {
+                typeTab1.classList.add('active');
+                titleNode.innerText = "•••• •••• •••• 5928";
+            } else {
+                typeTab2.classList.add('active');
+                titleNode.innerText = "•••• •••• •••• 8847";
+            }
+        }
+
+        function toggleInstrumentFreezeState(freezeCheckedState) {
+            const cardEl = document.getElementById('cardGraphicElement');
+            if(freezeCheckedState) {
+                cardEl.classList.add('card-frozen');
+                showAppToast('Payment instrument execution locked.', '❄️');
+            } else {
+                cardEl.classList.remove('card-frozen');
+                showAppToast('Payment instrument reactivated securely.', '⚡');
+            }
+        }
+
+        function calculateSimulatedLoanEMI() {
+            const p = parseFloat(document.getElementById('loanRangePrincipal').value);
+            const t = parseFloat(document.getElementById('loanRangeTenure').value);
+            
+            document.getElementById('lblP1').innerText = "₹" + p.toLocaleString('en-IN');
+            document.getElementById('lblT1').innerText = t + " Months";
+
+            const monthlyInterestRate = (8.5 / 12) / 100;
+            const calculatedEmi = (p * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, t)) / (Math.pow(1 + monthlyInterestRate, t) - 1);
+            
+            document.getElementById('simulatedEmiLabel').innerText = "₹" + Math.round(calculatedEmi).toLocaleString('en-IN') + ".00";
+        }
+
+        function processAdministrativeDecision(decisionStatusStr) {
+            showAppToast(`Application reference profile state recorded as: ${decisionStatusStr}`, '🛠️');
+            document.getElementById('adminApplicationBlock1').innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-secondary); font-weight:700;">Ledger Request Pipeline Cleared [${decisionStatusStr}]</div>`;
+        }
+
+        function filterDirectoryEngine() {
+            const queryStr = document.getElementById('directorySearchField').value.toLowerCase().trim();
+            const contactNodes = document.getElementById('directoryRenderSpace').getElementsByClassName('ledger-row');
+
+            for (let i = 0; i < contactNodes.length; i++) {
+                let textMatchNode = contactNodes[i].getElementsByClassName('c-nm')[0];
+                if (textMatchNode) {
+                    let matchingContext = textMatchNode.textContent || textMatchNode.innerText;
+                    contactNodes[i].style.display = (matchingContext.toLowerCase().indexOf(queryStr) > -1) ? "" : "none";
+                }
+            }
+        }
+
+        function openActiveChatConsole(recipientNameStr) {
+            currentActiveChatRecipientStr = recipientNameStr;
+            document.getElementById('chatInterfaceHeaderTitle').innerText = recipientNameStr;
+            navigateTo('chatScreen');
+        }
+
+        function executeChatRemittanceEngine() {
+            const inputValNode = document.getElementById('chatTransferInputField');
+            const parsedAmt = parseFloat(inputValNode.value);
+
+            if(!parsedAmt || isNaN(parsedAmt) || parsedAmt <= 0) {
+                showAppToast('Validation Mismatch: Incorrect amount parameter.', '❌');
+                return;
+            }
+            if(parsedAmt > currentSystemLedgerBalance) {
+                showAppToast('Insufficient liquid reserves to process remittance node.', '❌');
+                return;
+            }
+
+            currentSystemLedgerBalance -= parsedAmt;
+            updateDashboardVisualBalance();
+            appendLiveLedgerTransaction('Transfer to ' + currentActiveChatRecipientStr, parsedAmt, '👥');
+            showAppToast(`Routed ₹${parsedAmt.toLocaleString('en-IN')} directly to ${currentActiveChatRecipientStr}.`, '✅');
+            inputValNode.value = '';
+            navigateTo('homeDashboardScreen');
+        }
+
+        function toggleQRModal(activateModalState) {
+            const overlay = document.getElementById('globalQRModalComponent');
+            if(activateModalState) overlay.classList.add('active');
+            else overlay.classList.remove('active');
+        }
+
+        function toggleInterfaceTheme() {
+            document.body.classList.toggle('light-mode');
+        }
+    </script>
+</body>
+</html>
